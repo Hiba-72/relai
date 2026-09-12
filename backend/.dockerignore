@@ -1,0 +1,8 @@
+# Demo/fixture seed — never ship to prod images.
+seed_demo_tickets.py
+
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/

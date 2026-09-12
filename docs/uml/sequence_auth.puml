@@ -1,0 +1,54 @@
+@startuml
+title Authentification et rafraichissement du jeton
+
+actor Utilisateur as User
+participant "SPA React\n(LoginPage)" as SPA
+participant "NGINX" as NGINX
+participant "API FastAPI\n(auth router)" as API
+participant "security.py\n(passlib / jose)" as Sec
+database "PostgreSQL" as DB
+
+autonumber
+
+== Login ==
+User -> SPA : saisit email + mot de passe
+SPA -> NGINX : POST /api/v1/auth/login
+NGINX -> API : proxy_pass
+API -> DB : SELECT * FROM users WHERE email = :email
+DB --> API : User (avec hashed_password)
+API -> Sec : verify_password(pwd, hash)
+Sec --> API : True / False
+
+alt identifiants invalides
+    API --> SPA : 401 Invalid credentials
+else compte desactive
+    API --> SPA : 403 Account disabled
+else OK
+    API -> Sec : create_access_token(user.id)
+    API -> Sec : create_refresh_token(user.id)
+    Sec --> API : access + refresh
+    API --> SPA : 200 TokenResponse
+    SPA -> SPA : stocke les jetons (localStorage)
+end
+
+== Requete authentifiee ==
+SPA -> NGINX : GET /api/v1/... Authorization Bearer access
+NGINX -> API : proxy_pass
+API -> Sec : decode_token(expected_type="access")
+Sec --> API : user_id
+API -> DB : SELECT user
+DB --> API : User
+API --> SPA : 200 reponse metier
+
+== Refresh ==
+SPA -> API : POST /api/v1/auth/refresh (refresh_token)
+API -> Sec : decode_token(expected_type="refresh")
+
+alt refresh invalide ou expire
+    API --> SPA : 401
+else OK
+    API -> Sec : create_access_token + create_refresh_token (rotation)
+    API --> SPA : 200 nouveaux jetons
+end
+
+@enduml

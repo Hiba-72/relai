@@ -1,0 +1,65 @@
+@startuml
+title Cycle de vie d'un ticket - de la creation a la cloture
+
+|Demandeur|
+start
+:Ouvre le formulaire guide\n(NewTicketPage);
+:Selectionne un type de probleme;
+if (Equipement rattache ?) then (oui)
+  :Choisit un equipement\nde son service / poste;
+else (non)
+  :Ne rattache aucun equipement;
+endif
+:Ajoute un commentaire libre (facultatif);
+:Soumet le formulaire\n(POST /tickets/demandeur);
+
+|Systeme|
+:Verifie JWT + role DEMANDEUR;
+:Charge poste puis service\nde l'utilisateur;
+:compute_priority()\n= criticite + poids probleme\n+ poids equipement;
+if (Score >= 6 ?) then (oui)
+  :priorite = URGENT;
+else (non)
+  if (Score >= 2 ?) then (oui)
+    :priorite = NORMAL;
+  else (non)
+    :priorite = FAIBLE;
+  endif
+endif
+:Synthetise titre + description;
+:INSERT ticket (statut = NOUVEAU);
+:Retourne 201 au demandeur;
+
+|Informaticien|
+:Consulte la file de tickets\n(TicketsPage);
+if (Priorite a surcharger ?) then (oui)
+  :PATCH /tickets/{id}\n(ajuste priorite / titre / nature);
+else (non)
+endif
+:PATCH /tickets/{id}/status -> EN_COURS\n(auto-assignation si libre);
+:Ajoute des actions techniques\n(POST /tickets/{id}/actions);
+
+if (Resolu ou annule ?) then (resolu)
+  :PATCH status -> RESOLU\n(resolved_at = now);
+else (annule)
+  |Admin|
+  :PATCH status -> ANNULE\n(admin uniquement depuis EN_COURS);
+  stop
+endif
+
+|Admin|
+:Revoit le ticket resolu;
+if (Solution acceptee ?) then (oui)
+  :PATCH status -> CLOTURE;
+  if (Archiver ?) then (oui)
+    :PATCH /tickets/{id}/archive\n(archived_at, archived_by);
+  else (non)
+  endif
+  stop
+else (non - retour au technicien)
+  |Informaticien|
+  :Reprend le ticket\n(ajoute des actions);
+  stop
+endif
+
+@enduml

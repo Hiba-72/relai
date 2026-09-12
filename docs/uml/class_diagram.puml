@@ -1,0 +1,187 @@
+@startuml class_diagram_relai
+title Relai — Diagramme de classes (modèles SQLAlchemy)
+
+skinparam classAttributeIconSize 0
+hide circle
+left to right direction
+
+' ===================== ENUMS =====================
+enum Role {
+  ADMIN
+  INFORMATICIEN
+  DEMANDEUR
+}
+
+enum Etage {
+  SOUS_SOL
+  RDC
+  ETAGE_1
+  ETAGE_2
+}
+
+enum EquipementType {
+  PC
+  ECRAN
+  IMPRIMANTE
+  SCANNER
+  SWITCH
+  ROUTEUR
+  ONDULEUR
+  TELEPHONE
+  SERVEUR
+  AUTRE
+}
+
+enum EquipementEtat {
+  OPERATIONNEL
+  EN_PANNE
+  EN_MAINTENANCE
+  REFORME
+}
+
+enum TicketNature {
+  TECHNIQUE
+  METIER
+  ASSISTANCE
+  MAINTENANCE
+}
+
+enum TicketPriorite {
+  URGENT
+  NORMAL
+  FAIBLE
+}
+
+enum TicketStatut {
+  NOUVEAU
+  EN_COURS
+  RESOLU
+  CLOTURE
+  ANNULE
+}
+
+' ===================== CLASSES =====================
+class User {
+  + id : UUID <<PK>>
+  + email : String(255) <<unique>>
+  + full_name : String(255)
+  - hashed_password : String(255)
+  + role : Role
+  + is_active : Boolean
+  + created_at : DateTime
+  + updated_at : DateTime
+}
+
+class Service {
+  + id : UUID <<PK>>
+  + nom : String(100)
+  + sous_reseau : String(20)
+  + etage : Etage
+}
+
+class Poste {
+  + id : UUID <<PK>>
+  + nom : String(100)
+  + salle : String(50)
+  + utilisateur : String(150) [0..1]
+  + service_id : UUID <<FK>>
+  + notes : Text [0..1]
+  + created_at : DateTime
+}
+
+class Equipement {
+  + id : UUID <<PK>>
+  + reference : String(50) <<unique>>
+  + n_serie : String(100) [0..1] <<unique>>
+  + code_barre : String(100) [0..1] <<unique>>
+  + inventaire : String(100) [0..1] <<unique>>
+  + type : EquipementType
+  + marque : String(100)
+  + modele : String(150)
+  + service_id : UUID <<FK>>
+  + poste_id : UUID [0..1] <<FK>>
+  + etat : EquipementEtat
+  + processeur : String(100) [0..1]
+  + ram_go : Integer [0..1]
+  + disque_go : Integer [0..1]
+  + systeme_exploitation : String(100) [0..1]
+  + ecran_pouces : Integer [0..1]
+  + notes : Text [0..1]
+  + created_at : DateTime
+}
+
+class EquipementHistory {
+  + id : UUID <<PK>>
+  + equipement_id : UUID <<FK>>
+  + changed_by : UUID <<FK>>
+  + changed_at : DateTime
+  + field : String(50)
+  + old_value : Text [0..1]
+  + new_value : Text [0..1]
+}
+
+class Ticket {
+  + id : UUID <<PK>>
+  + titre : String(200)
+  + description : Text
+  + nature : TicketNature
+  + priorite : TicketPriorite
+  + statut : TicketStatut
+  + service_id : UUID <<FK>>
+  + poste_id : UUID [0..1] <<FK>>
+  + created_by : UUID <<FK>>
+  + assigned_to : UUID [0..1] <<FK>>
+  + created_at : DateTime
+  + updated_at : DateTime
+  + resolved_at : DateTime [0..1]
+}
+
+class TicketAction {
+  + id : UUID <<PK>>
+  + ticket_id : UUID <<FK>>
+  + description : Text
+  + created_by : UUID <<FK>>
+  + created_at : DateTime
+}
+
+class TicketEquipement <<association>> {
+  + ticket_id : UUID <<PK,FK>>
+  + equipement_id : UUID <<PK,FK>>
+}
+
+' ===================== ENUM LINKS =====================
+User          ..> Role
+Service       ..> Etage
+Equipement    ..> EquipementType
+Equipement    ..> EquipementEtat
+Ticket        ..> TicketNature
+Ticket        ..> TicketPriorite
+Ticket        ..> TicketStatut
+
+' ===================== RELATIONS =====================
+' --- Service -> * ---
+Service "1" o-- "0..*" Poste       : contient >
+Service "1" o-- "0..*" Equipement  : rattache >
+Service "1" o-- "0..*" Ticket      : concerne >
+
+' --- Poste -> * ---
+Poste   "0..1" o-- "0..*" Equipement : héberge >
+Poste   "0..1" o-- "0..*" Ticket     : localise >
+
+' --- User -> Ticket (deux FK distinctes) ---
+User "1"   --> "0..*" Ticket       : créés par (created_by)
+User "0..1" --> "0..*" Ticket      : assignés à (assigned_to)
+
+' --- Ticket -> TicketAction ---
+Ticket "1" *-- "0..*" TicketAction : historique d'actions >
+User   "1" --> "0..*" TicketAction : auteur (created_by)
+
+' --- Ticket <-> Equipement (M:N via TicketEquipement) ---
+Ticket "0..*" -- "0..*" Equipement : (via TicketEquipement)
+(Ticket, Equipement) .. TicketEquipement
+
+' --- Equipement -> EquipementHistory ---
+Equipement "1" *-- "0..*" EquipementHistory : audit >
+User       "1" --> "0..*" EquipementHistory : auteur (changed_by)
+
+@enduml

@@ -1,0 +1,71 @@
+# Production overlay for the hospital LAN deployment.
+#
+# Use with the base file:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# Changes vs. dev:
+#   - Postgres tuned for ~1.5 GB RAM and capped connection count
+#   - Backend: 2 uvicorn workers, no --reload, no bind mount (code from image)
+#   - Frontend: built bundle served by its own nginx (no Vite dev server)
+#   - Main nginx: HTTPS on 443 (port 80 → 301 to 443). TLS required because
+#     the site firewall blocks plain HTTP to the app VM.
+#   - All services restart: always
+
+services:
+  db:
+    restart: always
+    command:
+      - postgres
+      - -c
+      - shared_buffers=128MB
+      - -c
+      - work_mem=4MB
+      - -c
+      - effective_cache_size=512MB
+      - -c
+      - max_connections=50
+      - -c
+      - log_min_duration_statement=500
+    # Keep db on the internal network only; no host-side ports.
+
+  backend:
+    restart: always
+    command:
+      - uvicorn
+      - app.main:app
+      - --host
+      - "0.0.0.0"
+      - --port
+      - "8000"
+      - --workers
+      - "2"
+      - --proxy-headers
+      - --forwarded-allow-ips
+      - "*"
+    # Drop the dev bind mount — production runs the code baked into the image.
+    volumes: []
+
+  frontend:
+    build:
+      context: ./frontend
+      target: production
+    restart: always
+    # Drop the dev bind mount + node_modules volume.
+    volumes: []
+    expose:
+      - "80"
+
+  nginx:
+    restart: always
+    ports:
+      - "80:80"    # kept only for the 301 → https:// redirect
+      - "443:443"  # main HTTPS listener
+    volumes:
+      - ./nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      # Custom 502/503/504 page (see error_page directive in nginx.prod.conf).
+      - ./nginx/errors/50x.html:/usr/share/nginx/html/_errors/50x.html:ro
+      # TLS material. Files inside are gitignored — populated on the server
+      # by scripts/gen-cert.sh (self-signed) or by dropping in a CA-issued
+      # cert under the same filenames (relai.crt, relai.key).
+      - ./certs:/etc/nginx/certs:ro

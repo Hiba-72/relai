@@ -1,0 +1,34 @@
+# Env
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Docker volumes
+postgres_data/
+
+# TLS certs (generated on the server, never committed)
+certs/*.crt
+certs/*.key
+certs/*.pem
+
+# IDE
+.vscode/
+.idea/
+
+# Claude Code local settings
+.claude/
+
+# Transfer artifacts (bundle / offline docker image tar for air-gapped VMs)
+*.bundle
+*.tar
+
+# TypeScript incremental build cache
+*.tsbuildinfo

@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    // Vite does the transpiling; tsc is only here to type-check. Without
+    // this, `tsc -b` emits a .js next to every .ts/.tsx in src/.
+    "noEmit": true,
+    "isolatedModules": true,
+    "paths": { "@/*": ["./src/*"] },
+    "skipLibCheck": true
+  },
+  "include": ["src"]
+}

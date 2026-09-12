@@ -1,0 +1,126 @@
+@startuml use_case_relai
+title Relai — Diagramme de cas d'utilisation
+
+left to right direction
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+
+actor "Informaticien" as Tech
+actor "Admin" as Admin
+
+Admin --|> Tech
+
+rectangle "Application Relai" {
+
+  package "Authentification & compte" {
+    usecase "S'authentifier\n(login / refresh)"            as UC_LOGIN
+    usecase "Consulter son profil"                          as UC_ME
+    usecase "Changer son mot de passe"                      as UC_PWD_SELF
+  }
+
+  package "Tableau de bord" {
+    usecase "Consulter le tableau de bord\n(KPIs, tickets, activité)" as UC_DASH
+  }
+
+  package "Tickets" {
+    usecase "Lister / filtrer les tickets"                  as UC_TK_LIST
+    usecase "Consulter un ticket\n(détail + actions)"       as UC_TK_VIEW
+    usecase "Créer un ticket"                               as UC_TK_CREATE
+    usecase "S'assigner un ticket\n(self-assign)"           as UC_TK_SELF_ASSIGN
+    usecase "Prendre en charge un ticket\n(nouveau -> en_cours)" as UC_TK_START
+    usecase "Résoudre un ticket\n(en_cours -> resolu)"      as UC_TK_RESOLVE
+    usecase "Ajouter une action\nà un ticket"               as UC_TK_ACTION
+
+    usecase "Assigner un ticket\nà un autre technicien"     as UC_TK_ASSIGN_ANY
+    usecase "Annuler un ticket"                             as UC_TK_CANCEL
+    usecase "Clôturer un ticket\n(resolu -> cloture)"       as UC_TK_CLOSE
+  }
+
+  package "Inventaire — Équipements" {
+    usecase "Lister / rechercher\nles équipements"          as UC_EQ_LIST
+    usecase "Consulter un équipement"                       as UC_EQ_VIEW
+    usecase "Créer un équipement"                           as UC_EQ_CREATE
+    usecase "Modifier un équipement"                        as UC_EQ_UPDATE
+    usecase "Consulter l'historique\nd'un équipement"       as UC_EQ_HISTORY
+    usecase "Exporter l'inventaire\n(.xlsx)"                as UC_EQ_EXPORT
+    usecase "Archiver un équipement\n(état = reforme)"      as UC_EQ_ARCHIVE
+    usecase "Supprimer définitivement\nun équipement"       as UC_EQ_DELETE
+  }
+
+  package "Postes" {
+    usecase "Lister / consulter\nles postes"                as UC_POSTE_LIST
+    usecase "Créer un poste"                                as UC_POSTE_CREATE
+    usecase "Modifier un poste"                             as UC_POSTE_UPDATE
+    usecase "Supprimer un poste"                            as UC_POSTE_DELETE
+  }
+
+  package "Services (départements)" {
+    usecase "Lister les services"                           as UC_SVC_LIST
+    usecase "Créer un service"                              as UC_SVC_CREATE
+    usecase "Modifier un service"                           as UC_SVC_UPDATE
+    usecase "Vérifier l'usage d'un service"                 as UC_SVC_USAGE
+    usecase "Supprimer un service"                          as UC_SVC_DELETE
+  }
+
+  package "Utilisateurs" {
+    usecase "Lister les utilisateurs"                       as UC_USR_LIST
+    usecase "Créer un utilisateur"                          as UC_USR_CREATE
+    usecase "Modifier un utilisateur\n(rôle, statut, ...)"  as UC_USR_UPDATE
+    usecase "Réinitialiser le mot de passe\nd'un utilisateur" as UC_USR_PWD_RESET
+  }
+}
+
+' --- Informaticien (également hérité par Admin) ---
+Tech --> UC_LOGIN
+Tech --> UC_ME
+Tech --> UC_PWD_SELF
+Tech --> UC_DASH
+
+Tech --> UC_TK_LIST
+Tech --> UC_TK_VIEW
+Tech --> UC_TK_CREATE
+Tech --> UC_TK_SELF_ASSIGN
+Tech --> UC_TK_START
+Tech --> UC_TK_RESOLVE
+Tech --> UC_TK_ACTION
+
+Tech --> UC_EQ_LIST
+Tech --> UC_EQ_VIEW
+Tech --> UC_EQ_CREATE
+Tech --> UC_EQ_UPDATE
+Tech --> UC_EQ_HISTORY
+Tech --> UC_EQ_EXPORT
+
+Tech --> UC_POSTE_LIST
+Tech --> UC_POSTE_CREATE
+Tech --> UC_POSTE_UPDATE
+
+Tech --> UC_SVC_LIST
+Tech --> UC_USR_LIST
+
+' --- Admin uniquement ---
+Admin --> UC_TK_ASSIGN_ANY
+Admin --> UC_TK_CANCEL
+Admin --> UC_TK_CLOSE
+
+Admin --> UC_EQ_ARCHIVE
+Admin --> UC_EQ_DELETE
+
+Admin --> UC_POSTE_DELETE
+
+Admin --> UC_SVC_CREATE
+Admin --> UC_SVC_UPDATE
+Admin --> UC_SVC_USAGE
+Admin --> UC_SVC_DELETE
+
+Admin --> UC_USR_CREATE
+Admin --> UC_USR_UPDATE
+Admin --> UC_USR_PWD_RESET
+
+' --- Relations entre cas d'utilisation ---
+UC_TK_START    ..> UC_TK_SELF_ASSIGN : <<include>>\n(si non assigné)
+UC_EQ_UPDATE   ..> UC_EQ_HISTORY     : <<include>>\n(écrit un log d'audit)
+UC_EQ_ARCHIVE  ..> UC_EQ_HISTORY     : <<include>>
+UC_SVC_DELETE  ..> UC_SVC_USAGE      : <<include>>\n(refus si références)
+
+@enduml

@@ -1,0 +1,3 @@
+# Keep this directory in git. TLS cert + key files (relai.crt, relai.key)
+# are gitignored — generate them on the server with scripts/gen-cert.sh, or
+# drop in a CA-issued cert under the same filenames.

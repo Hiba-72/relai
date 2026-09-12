@@ -1,0 +1,9 @@
+# Normalise line endings in the repository to LF.
+#
+# Without this, a Windows clone can commit CRLF into scripts/*.sh, and the
+# Linux containers then fail them with "bad interpreter: No such file or
+# directory" — which is an unpleasant thing to debug on deploy day.
+* text=auto eol=lf
+
+# PowerShell is the exception: it wants CRLF on Windows.
+*.ps1 text eol=crlf

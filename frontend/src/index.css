@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+@layer base {
+  :root {
+    /* Relai palette "clinique froid": cool neutral greys on a near-white
+       ground, one blue for action, and colour held back for state — red for
+       urgency, green for resolved. Chosen over the previous warm beige/walnut
+       for contrast: these greys carry a cool blue cast (hue ~210) so they read
+       as deliberate rather than dirty, and hold up on the older ward monitors.
+
+       Every value is an HSL triple consumed as hsl(var(--x)) — keep that
+       format, Tailwind composes opacity onto it (e.g. bg-primary/10). */
+
+    --background: 210 20% 96%;
+    --foreground: 211 32% 13%;
+
+    /* Cards sit on the grey ground as pure white, which is what separates
+       them — there is no shadow doing that work. */
+    --card: 0 0% 100%;
+    --card-foreground: 211 32% 13%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 211 32% 13%;
+
+    /* Primary: the single action blue. */
+    --primary: 212 69% 39%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 25% 91%;
+    --secondary-foreground: 211 27% 17%;
+
+    --muted: 210 22% 93%;
+    --muted-foreground: 208 15% 44%;
+
+    --accent: 206 24% 94%;
+    --accent-foreground: 211 30% 15%;
+
+    --destructive: 3 62% 47%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 23% 88%;
+    --input: 210 23% 88%;
+    --ring: 212 69% 39%;
+
+    --radius: 0.625rem;
+
+    /* Success. Used for the Nouveau status, resolved confirmations and
+       empty-state icons. `success` is the solid badge fill (white text on it);
+       `success-muted` is the soft wash, with `success-strong` as its text so
+       the pair stays legible. */
+    --success: 152 69% 26%;
+    --success-foreground: 150 40% 97%;
+    --success-muted: 150 38% 91%;
+    --success-strong: 153 71% 21%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  /* One knob for the whole UI.
+     
+     80% of the browser default — a percentage rather than a fixed px so it
+     still respects a user who has raised their browser font size, which a
+     hardcoded 12.8px would override.
+
+     This only works because every size in the app is rem-based: the earlier
+     70% root silently rescaled rems while leaving hardcoded px values alone,
+     so the two drifted apart and small text sat next to oversized icons.
+     Hairlines and sub-4px dots are the deliberate exception — they stay px so
+     they stay crisp. Change this one value to retune the whole density. */
+  html {
+    font-size: 80%;
+  }
+
+  html, body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "ss01", "cv11";
+  }
+
+  h1, h2, h3 {
+    @apply font-serif tracking-tight;
+  }
+}

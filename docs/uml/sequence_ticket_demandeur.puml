@@ -1,0 +1,65 @@
+@startuml
+title Soumission d'un ticket guide par un demandeur
+
+actor "Demandeur\n(infirmier / medecin)" as User
+participant "SPA React\n(NewTicketPage)" as SPA
+participant "NGINX\n(reverse proxy TLS)" as NGINX
+participant "API FastAPI\n(tickets router)" as API
+participant "Dependance\nget_current_user" as Auth
+participant "Service priorite\ncompute_priority()" as Prio
+database "PostgreSQL" as DB
+
+autonumber
+
+User -> SPA : remplit le formulaire guide\n(probleme, equipement, commentaire)
+SPA -> NGINX : POST /api/v1/tickets/demandeur\nAuthorization: Bearer access-JWT
+NGINX -> API : proxy_pass HTTPS interne
+
+API -> Auth : resoudre l'utilisateur courant
+Auth -> Auth : decode_token(expected_type="access")
+
+alt JWT invalide ou expire
+    Auth --> API : HTTPException 401
+    API --> NGINX : 401 Unauthorized
+    NGINX --> SPA : 401
+else JWT valide
+    Auth -> DB : SELECT * FROM users WHERE id = :uid
+    DB --> Auth : User
+    Auth --> API : current_user
+end
+
+API -> API : verifier role == DEMANDEUR\n(sinon 403)
+API -> API : verifier current_user.poste_id\n(sinon 409)
+
+API -> DB : SELECT * FROM postes WHERE id = :poste_id
+DB --> API : Poste
+API -> DB : SELECT * FROM services WHERE id = :poste.service_id
+DB --> API : Service (niveau_criticite)
+
+opt payload.equipement_id fourni
+    API -> DB : SELECT * FROM equipements WHERE id = :eid
+    DB --> API : Equipement
+    API -> API : verifier equipement.service_id == service.id\n(sinon 403)
+end
+
+API -> Prio : compute_priority(niveau_criticite,\n  probleme, [equipement?])
+Prio -> Prio : score = criticite\n+ PROBLEM_WEIGHTS[probleme]\n+ max(EQUIPEMENT_WEIGHTS[eq.type])
+Prio --> API : TicketPriorite (FAIBLE / NORMAL / URGENT)
+
+API -> API : synthetiser titre\n(PROBLEM_LABEL - equipement)\net description (poste, equipement, commentaire)
+
+API -> DB : INSERT INTO tickets (...) RETURNING *
+DB --> API : Ticket persiste
+
+opt equipement rattache
+    API -> DB : INSERT INTO ticket_equipements
+end
+
+API -> DB : SELECT ticket (relations chargees)
+DB --> API : TicketRead
+
+API --> NGINX : 201 Created (TicketRead JSON)
+NGINX --> SPA : 201 Created
+SPA --> User : confirmation + redirection\nvers la fiche du ticket
+
+@enduml
