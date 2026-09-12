@@ -8,6 +8,10 @@ urgent it is.
 **Stack:** React 19 + TypeScript · FastAPI + async SQLAlchemy · PostgreSQL 16 ·
 Docker + NGINX
 
+> **Relai** — application de gestion de parc informatique et de tickets pour
+> l'unité informatique d'un hôpital. Interface en français, documentation
+> technique en anglais.
+
 > **All data in this repository is synthetic.** The hospital, its services,
 > staff, workstations, serial numbers and asset tags are invented and generated
 > from a fixed random seed. This is a portfolio copy of a system that was built
