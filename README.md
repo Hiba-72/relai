@@ -16,10 +16,9 @@ Docker + NGINX
 
 ---
 
-## What's actually interesting here
+## Design decisions
 
-Most ticketing systems are CRUD with a status column. Four things in this one
-came out of the constraints of the real deployment:
+Four choices that came out of the constraints of the real deployment:
 
 **Priority is computed, never claimed.** A demandeur (nurse, secretary, ward
 staff) cannot set a ticket's priority — the classic failure mode where
@@ -179,10 +178,15 @@ Runs against a real PostgreSQL, not SQLite — the models depend on Postgres
 UUID and native enum types, and on server-side defaults, so SQLite would pass
 things production rejects.
 
-Covered: token handling and the ways it can be abused (type confusion, forged
-subjects, deactivated accounts), role permissions per endpoint, the ticket
-state machine including every reopen path, priority scoring boundaries, and
-pagination.
+**112 tests.** They cover token handling and the ways it can be abused (type
+confusion, forged subjects, deactivated accounts), role permissions on every
+endpoint, the ticket state machine including each reopen path, priority
+scoring boundaries and pagination, inventory filtering and identifier
+uniqueness, the cross-service workstation rule, the equipment audit log,
+archive versus permanent deletion, the spreadsheet export, and both
+password-change paths.
+
+The frontend has no tests yet — that is the next gap worth closing.
 
 ---
 
@@ -247,10 +251,6 @@ gunzip -c backups/<dump>.sql.gz | docker compose exec -T db psql -U relai_user r
 ```
 
 Test a restore once before relying on the backups.
-
-> Deployment paths, the database name and the Postgres role are still
-> `relai*` — they name a live database and its backup files, and renaming
-> them would strand the deployed volume.
 
 ### Before handing it over
 
