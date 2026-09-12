@@ -14,8 +14,9 @@ from collections.abc import AsyncGenerator
 
 import pytest
 import pytest_asyncio
+from fastapi import Depends
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import text
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
@@ -64,6 +65,20 @@ async def db() -> AsyncGenerator[AsyncSession, None]:
         yield session
 
 
+@pytest.fixture
+def db_read():
+    """A short-lived session for asserting on rows *after* HTTP calls.
+
+    Deliberately not the long-lived `db` fixture: keeping that session open
+    across a request holds a transaction (and its snapshot) alive alongside
+    the one the app opened, and tearing the two down collides. Use it as:
+
+        async with db_read() as s:
+            rows = (await s.execute(select(Thing))).scalars().all()
+    """
+    return TestSession
+
+
 @pytest_asyncio.fixture
 async def client() -> AsyncGenerator[AsyncClient, None]:
     """HTTP client bound to the ASGI app, sharing the test database."""
@@ -102,6 +117,29 @@ async def service(db: AsyncSession) -> Service:
 @pytest_asyncio.fixture
 async def poste(db: AsyncSession, service: Service) -> Poste:
     p = Poste(nom="PC-RADIO-01", salle="Salle 1", service_id=service.id)
+    db.add(p)
+    await db.commit()
+    return p
+
+
+@pytest_asyncio.fixture
+async def other_service(db: AsyncSession) -> Service:
+    """A second service, for the cross-service rules (a poste may only host
+    equipment from its own service)."""
+    svc = Service(
+        nom="Laboratoire",
+        sous_reseau="10.20.99.0/24",
+        etage=Etage.SOUS_SOL,
+        niveau_criticite=2,
+    )
+    db.add(svc)
+    await db.commit()
+    return svc
+
+
+@pytest_asyncio.fixture
+async def other_poste(db: AsyncSession, other_service: Service) -> Poste:
+    p = Poste(nom="PC-LABO-01", salle="Paillasse 2", service_id=other_service.id)
     db.add(p)
     await db.commit()
     return p
@@ -166,10 +204,22 @@ def as_user(client: AsyncClient):
 
     Bypasses the token round-trip so a broken login can't cascade into every
     other test failing. Token handling itself is covered in test_auth.py.
+
+    The override re-loads the user **through the request's own session**,
+    exactly as the real `get_current_user` does. Returning the fixture's
+    instance instead would hand endpoints an object attached to a different
+    session, so anything that mutates `current_user` — changing your own
+    password, for one — would flush into a session that never held it and
+    silently persist nothing.
     """
 
     def _apply(user: User) -> AsyncClient:
-        app.dependency_overrides[get_current_user] = lambda: user
+        async def _current_user(db: AsyncSession = Depends(get_db)) -> User:
+            return (await db.execute(
+                select(User).where(User.id == user.id)
+            )).scalar_one()
+
+        app.dependency_overrides[get_current_user] = _current_user
         return client
 
     return _apply
