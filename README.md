@@ -20,6 +20,38 @@ Docker + NGINX
 
 ---
 
+## The application
+
+<!-- Paste the GitHub video URL on the line below, on its own line.
+     Get it by dragging the .mp4 into any issue comment box — the upload
+     happens on drop, you don't have to post the comment. -->
+
+A nurse in Réanimation reports a fault in three clicks. She never sees a
+priority field: the server scores it from her service's criticality, the kind
+of problem and the class of equipment affected. It reaches the technician's
+queue already marked **Urgent** — and nobody chose that.
+
+![Triage queue](docs/screenshots/triage.png)
+
+*The technician's day. Their own interventions, the unassigned pool, then
+everything else — one row shape across all three, so the same ticket reads the
+same way wherever you meet it. Priority owns the rail, status owns the badge.*
+
+![Ticket detail](docs/screenshots/ticket-detail.png)
+
+*A ticket's timeline, in two tracks. Typed comments are cards, tinted by which
+side of the hospital wrote them; status changes and reassignments are the thin
+italic entries, written by the server so that typing one into the comment box
+cannot forge it.*
+
+![Inventory](docs/screenshots/inventory.png)
+
+*The asset register — 228 items across 14 services in the demo seed.
+Filterable by type, state, service, room and subnet, searchable across every
+identifier, and exportable to Excel. Each asset carries its own fault history.*
+
+---
+
 ## Design decisions
 
 Four choices that came out of the constraints of the real deployment:
