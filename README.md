@@ -22,9 +22,7 @@ Docker + NGINX
 
 ## The application
 
-<!-- Paste the GitHub video URL on the line below, on its own line.
-     Get it by dragging the .mp4 into any issue comment box — the upload
-     happens on drop, you don't have to post the comment. -->
+<!-- GitHub video URL -->
 
 A nurse in Réanimation reports a fault in three clicks. She never sees a
 priority field: the server scores it from her service's criticality, the kind
