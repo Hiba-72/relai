@@ -44,13 +44,13 @@ side of the hospital wrote them; status changes and reassignments are the thin
 italic entries, written by the server so that typing one into the comment box
 cannot forge it.*
 
-![Inventory](docs/screenshots/inventory.png)
+![Inventory](docs/screenshots/equipment.png)
 
 *The asset register — 228 items across 14 services in the demo seed.
 Filterable by type, state, service, room and subnet, and searchable across
 every identifier. Exports to Excel for the annual inventory count.*
 
-![Equipment detail](docs/screenshots/equipement-detail.png)
+![Equipment detail](docs/screenshots/equipment_details.png)
 
 *Every asset carries its own history: which tickets it appeared in, and a
 field-level audit of every change — who moved it, when, and from what to what.
