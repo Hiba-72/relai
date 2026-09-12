@@ -37,7 +37,7 @@ queue already marked **Urgent** — and nobody chose that.
 everything else — one row shape across all three, so the same ticket reads the
 same way wherever you meet it. Priority owns the rail, status owns the badge.*
 
-![Ticket detail](docs/screenshots/ticket-detail.png)
+![Ticket timeline](docs/screenshots/journal.png)
 
 *A ticket's timeline, in two tracks. Typed comments are cards, tinted by which
 side of the hospital wrote them; status changes and reassignments are the thin
@@ -47,8 +47,15 @@ cannot forge it.*
 ![Inventory](docs/screenshots/inventory.png)
 
 *The asset register — 228 items across 14 services in the demo seed.
-Filterable by type, state, service, room and subnet, searchable across every
-identifier, and exportable to Excel. Each asset carries its own fault history.*
+Filterable by type, state, service, room and subnet, and searchable across
+every identifier. Exports to Excel for the annual inventory count.*
+
+![Equipment detail](docs/screenshots/equipement-detail.png)
+
+*Every asset carries its own history: which tickets it appeared in, and a
+field-level audit of every change — who moved it, when, and from what to what.
+"How many times has this printer failed this year" is a query, not an
+archaeology exercise.*
 
 ---
 
