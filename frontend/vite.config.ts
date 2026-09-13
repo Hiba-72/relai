@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
@@ -17,5 +18,13 @@ export default defineConfig({
     // which violates our strict CSP (script-src 'self'). Skipping preload
     // costs a hair of latency; the actual module scripts still load fine.
     modulePreload: { polyfill: false },
+  },
+  test: {
+    environment: "jsdom",
+    globals: true,
+    setupFiles: "./src/test/setup.ts",
+    // Only unit tests. The API is covered by the backend suite against a real
+    // PostgreSQL; duplicating that here with mocks would test the mocks.
+    include: ["src/**/*.{test,spec}.{ts,tsx}"],
   },
 });

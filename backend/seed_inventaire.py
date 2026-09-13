@@ -11,13 +11,16 @@ Run after seed.py:
 
 import asyncio
 import random
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import func, select
 
 from app.db.session import SessionLocal
 from app.models.equipement import Equipement, EquipementEtat, EquipementType
+from app.models.equipement_history import EquipementHistory
 from app.models.poste import Poste
 from app.models.service import Service
+from app.models.user import Role, User
 
 # Fixed seed: reproducible inventory, so a reset demo looks identical.
 RNG = random.Random(20260912)
@@ -101,6 +104,48 @@ class Tags:
     def next(self) -> str:
         self._n += 1
         return f"INV-{self._n:05d}"
+
+
+def ago(days: float) -> datetime:
+    """Naive UTC — the timestamp columns are TIMESTAMP WITHOUT TIME ZONE."""
+    return (datetime.now(timezone.utc) - timedelta(days=days)).replace(tzinfo=None)
+
+
+# Plausible edits an IT unit actually makes to a record: a machine goes in for
+# repair and comes back, kit gets moved, a note is added. Without these the
+# audit log on every asset is empty, which undersells the feature.
+def history_for(eq: Equipement, admin_id, rng: random.Random) -> list[EquipementHistory]:
+    def row(field, old, new, days):
+        return EquipementHistory(
+            equipement_id=eq.id, changed_by=admin_id,
+            field=field, old_value=old, new_value=new, changed_at=ago(days),
+        )
+
+    rows: list[EquipementHistory] = []
+    roll = rng.random()
+
+    if eq.etat == EquipementEtat.EN_PANNE:
+        rows.append(row("etat", "operationnel", "en_panne", rng.uniform(1, 20)))
+    elif eq.etat == EquipementEtat.EN_MAINTENANCE:
+        rows.append(row("etat", "operationnel", "en_maintenance", rng.uniform(1, 30)))
+    elif eq.etat == EquipementEtat.REFORME:
+        rows.append(row("etat", "operationnel", "en_panne", rng.uniform(60, 200)))
+        rows.append(row("etat", "en_panne", "reforme", rng.uniform(20, 55)))
+    elif roll < 0.30:
+        # Went out for repair and came back — the most common pair.
+        out = rng.uniform(40, 160)
+        rows.append(row("etat", "operationnel", "en_maintenance", out))
+        rows.append(row("etat", "en_maintenance", "operationnel", out - rng.uniform(3, 20)))
+
+    if rng.random() < 0.12:
+        rows.append(row("notes", None, rng.choice([
+            "Nettoyage interne effectué.",
+            "Ventilateur remplacé.",
+            "Garantie expirée.",
+            "Disque remplacé (SSD).",
+        ]), rng.uniform(5, 90)))
+
+    return rows
 
 
 async def seed_inventory() -> None:
@@ -225,9 +270,28 @@ async def seed_inventory() -> None:
             ))
             n_equipements += 1
 
+        # IDs only exist after a flush, so the audit rows are generated in a
+        # second pass over what was just written.
+        await db.flush()
+
+        admin = (await db.execute(
+            select(User).where(User.role == Role.ADMIN).limit(1)
+        )).scalar_one_or_none()
+
+        n_history = 0
+        if admin is None:
+            print("No admin found — skipping audit history. Run seed.py first.")
+        else:
+            equipements = (await db.execute(select(Equipement))).scalars().all()
+            for eq in equipements:
+                for row in history_for(eq, admin.id, RNG):
+                    db.add(row)
+                    n_history += 1
+
         await db.commit()
         print(f"Postes created: {n_postes}")
         print(f"Équipements created: {n_equipements}")
+        print(f"Audit entries created: {n_history}")
 
 
 if __name__ == "__main__":

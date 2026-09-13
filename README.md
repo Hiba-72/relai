@@ -212,22 +212,30 @@ job and startup never touches it.
 ## Tests
 
 ```bash
-docker compose -f docker-compose.test.yml run --rm tests
+docker compose -f docker-compose.test.yml run --rm tests   # backend — 112
+cd frontend && npm test                                    # frontend — 24
 ```
 
-Runs against a real PostgreSQL, not SQLite — the models depend on Postgres
-UUID and native enum types, and on server-side defaults, so SQLite would pass
-things production rejects.
+**Backend: 112 tests**, against a real PostgreSQL rather than SQLite — the
+models depend on Postgres UUID and native enum types and on server-side
+defaults, so SQLite would pass things production rejects. They cover token
+handling and the ways it can be abused (type confusion, forged subjects,
+deactivated accounts), role permissions on every endpoint, the ticket state
+machine including each reopen path, priority scoring boundaries and
+pagination, inventory filtering and identifier uniqueness, the cross-service
+workstation rule, the equipment audit log, archive versus permanent deletion,
+the spreadsheet export, and both password-change paths.
 
-**112 tests.** They cover token handling and the ways it can be abused (type
-confusion, forged subjects, deactivated accounts), role permissions on every
-endpoint, the ticket state machine including each reopen path, priority
-scoring boundaries and pagination, inventory filtering and identifier
-uniqueness, the cross-service workstation rule, the equipment audit log,
-archive versus permanent deletion, the spreadsheet export, and both
-password-change paths.
+**Frontend: 24 tests** (Vitest) on the pieces where a mistake is silent: the
+role hierarchy in the route guard, the API error extractor — including the
+validation-error shape that used to render as `[object Object]` — and the
+formatting helpers, checked to read theme tokens rather than literal colours,
+since hardcoded ones once survived a palette change and clashed with
+everything around them.
 
-The frontend has no tests yet — that is the next gap worth closing.
+There are no mocked-API component tests. The endpoints are covered for real
+against Postgres by the backend suite; repeating that here with mocks would
+mostly test the mocks.
 
 ---
 
