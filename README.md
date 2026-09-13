@@ -22,7 +22,7 @@ Docker + NGINX
 
 ## The application
 
-<!-- GitHub video URL -->
+https://github.com/user-attachments/assets/db3fae98-9ea0-4e02-b9fe-26ee690005e9
 
 A nurse in Réanimation reports a fault in three clicks. She never sees a
 priority field: the server scores it from her service's criticality, the kind
@@ -293,17 +293,12 @@ gunzip -c backups/<dump>.sql.gz | docker compose exec -T db psql -U relai_user r
 
 Test a restore once before relying on the backups.
 
-### Before handing it over
+### If you deploy this rather than just running the demo
 
-If you deploy this for real rather than as a demo:
-
-1. Change the seeded admin password.
-2. Create real accounts for the technicians.
-3. Skip `seed_demo.py`, or delete what it created — every `*@chu-valmont.fr`
-   account is demo data.
-4. Replace `seed.py`'s service list and `seed_inventaire.py`'s generator with
-   the real ones.
-5. Confirm `scripts/backup.sh` runs cleanly, and test a restore.
+Skip `seed_demo.py`, or delete what it created — every `*@chu-valmont.fr`
+account is demo data. Replace `seed.py`'s service list and
+`seed_inventaire.py`'s generator with real ones, change the seeded admin
+password, and test a backup restore before relying on it.
 
 ---
 
